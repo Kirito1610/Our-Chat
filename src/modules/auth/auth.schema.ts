@@ -36,5 +36,7 @@ export const loginSchema = z.object({
     .min(1),
 });
 
+export const googleSchema = z.object({ idToken: z.string().min(1) });
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

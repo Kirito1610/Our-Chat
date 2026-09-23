@@ -4,6 +4,7 @@ import { conversationMembers, conversations, messageReactions, messages, users, 
 import { AppError } from "../../lib/errors";
 import { decodeCursor, encodeCursor } from "../../lib/pagination";
 import { realtimeHub } from "../../realtime/hub";
+import { notifyConversationMembers } from "../../lib/notifications";
 import { requireMember } from "../conversations/conversation.service";
 
 type NewAttachment = { url: string; type: "image" | "video" | "audio" | "document"; name?: string | undefined; mimeType?: string | undefined; size?: number | undefined; thumbnailUrl?: string | undefined };
@@ -32,6 +33,7 @@ export async function sendMessage(conversationId: string, userId: string, input:
   await db.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, conversationId));
   const message = await getMessage(created.id, userId);
   await realtimeHub.broadcastConversation(conversationId, { type: "message.new", data: message });
+  void notifyConversationMembers(conversationId, userId, "New message", message.content || "Sent an attachment", message.id).catch(() => undefined);
   return message;
 }
 

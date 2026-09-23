@@ -75,6 +75,23 @@ export async function uploadAttachment(file: File, url: string) {
   };
 }
 
+export async function uploadAvatar(file: File) {
+  if (file.size === 0) throw new AppError(400, "EMPTY_FILE", "File cannot be empty");
+  if (file.size > 10 * 1024 * 1024) throw new AppError(413, "FILE_TOO_LARGE", "Avatars must be 10 MB or smaller");
+  if (!file.type.startsWith("image/")) throw new AppError(400, "INVALID_AVATAR_TYPE", "Avatar must be an image");
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+    getCloudinary().uploader.upload_stream(
+      { folder: "chat-app/avatars", resource_type: "image", type: "upload" },
+      (error, response) => {
+        if (error || !response) reject(error ?? new Error("Avatar upload failed"));
+        else resolve(response);
+      },
+    ).end(buffer);
+  });
+  return { url: result.secure_url, width: result.width, height: result.height };
+}
+
 export async function downloadAttachment(publicId: string, version?: number) {
   const deliveryUrl = getCloudinary().url(publicId, { resource_type: "raw", type: "authenticated", version, sign_url: true, secure: true });
   const response = await fetch(deliveryUrl);
