@@ -37,6 +37,9 @@ export const conversationMembers = pgTable("conversation_members", {
 
 export type MessageAttachment = {
   url: string;
+  publicId?: string;
+  version?: number;
+  encrypted?: boolean;
   type: "image" | "video" | "audio" | "document";
   name?: string;
   mimeType?: string;

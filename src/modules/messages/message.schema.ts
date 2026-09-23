@@ -2,6 +2,9 @@ import { z } from "zod";
 
 export const attachmentSchema = z.object({
   url: z.url().max(2048),
+  publicId: z.string().max(512).optional(),
+  version: z.number().int().positive().optional(),
+  encrypted: z.boolean().optional(),
   type: z.enum(["image", "video", "audio", "document"]),
   name: z.string().max(255).optional(),
   mimeType: z.string().max(100).optional(),
