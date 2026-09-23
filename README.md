@@ -10,6 +10,8 @@ Copy `.env.example` to `.env` and set:
 - `JWT_SECRET`: long random secret
 - `REDIS_URL`: Upstash Redis URL required for cross-instance real-time delivery
 - `CORS_ORIGIN`: frontend origin, or `*` during local development
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Cloudinary server credentials for attachments
+- `MEDIA_ENCRYPTION_KEY`: 32-byte base64 key used to encrypt media before it reaches Cloudinary
 
 ## Local development
 
@@ -94,6 +96,29 @@ Message body:
 ```
 
 Upload media to object storage first. Attachment entries support `url`, `type`, `name`, `mimeType`, `size`, and `thumbnailUrl`.
+
+### Attachments
+
+Upload files before sending a message:
+
+```text
+POST /api/uploads
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+file: <file>
+```
+
+The response returns `data`, an array of attachment objects. Pass that array as `attachments` in `POST /api/conversations/:id/messages`. Up to 10 files can be uploaded per request, with a maximum size of 50 MB per file. Uploads require `conversationId` and membership in that conversation.
+
+Media is encrypted with AES-256-GCM before being uploaded as an authenticated raw Cloudinary asset. Downloads go through `GET /api/attachments`, which checks conversation membership and decrypts the content. Since this endpoint requires a bearer token, clients should fetch the file with `Authorization` and display it using a Blob URL instead of placing the attachment URL directly in an `<img>` tag.
+
+Generate the encryption key once and keep it secret:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+```
+
+This protects media from Cloudinary and unauthorized API callers, but it is not end-to-end encryption: the backend holds the encryption key and can decrypt files. True end-to-end encryption requires generating keys in the clients and securely sharing them only with conversation participants.
 
 ## WebSocket events
 
